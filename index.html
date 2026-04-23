@@ -1278,7 +1278,7 @@ function baseOf(key) {
 function computeAttackRating(overrides) {
   const p = userStats.pairs;
   const o = overrides || {};
-  const f = k => (o[k] != null ? o[k] : (p[k]?.final || 0));
+  const f = k => (o[k] != null ? o[k] : ((p[k] && p[k].final) || 0));
   const sum = f('공격') + f('치명') + f('명중') + f('관통');
   const bonus = (o['피해보너스'] != null ? o['피해보너스'] : (userStats.extras.피해보너스 || 0));
   return sum * (1 + bonus / 100);
@@ -1287,7 +1287,7 @@ function computeAttackRating(overrides) {
 function computeDefenseRating(overrides) {
   const p = userStats.pairs;
   const o = overrides || {};
-  const f = k => (o[k] != null ? o[k] : (p[k]?.final || 0));
+  const f = k => (o[k] != null ? o[k] : ((p[k] && p[k].final) || 0));
   const sum = f('HP') / 430 + f('방어') + f('회피') + f('치명저항');
   const reduction = (o['피해감소'] != null ? o['피해감소'] : (userStats.extras.피해감소 || 0));
   return sum * (1 + reduction / 100);
@@ -1298,7 +1298,7 @@ function emblemRatingGain(emblem, eff) {
   const p = userStats.pairs;
   const overrides = {};
   const addFlat = (cat, df) => {
-    if (overrides[cat] == null) overrides[cat] = (p[cat]?.final || 0);
+    if (overrides[cat] == null) overrides[cat] = (p[cat] && p[cat].final) || 0;
     overrides[cat] += df;
   };
   for (const k of [1, 2]) {
@@ -1312,7 +1312,7 @@ function emblemRatingGain(emblem, eff) {
       const key = sn.replace(/보너스$/, '');
       addFlat(key, baseOf(key) * v / 100);
     } else {
-      addFlat(sn, v * ((p[sn]?.bonusPct || 100) / 100));
+      addFlat(sn, v * (((p[sn] && p[sn].bonusPct) || 100) / 100));
     }
   }
   return {
@@ -1392,7 +1392,7 @@ function getTargetStatus(statName) {
   if (['명중','관통','방어','치명저항','회피'].includes(cat)) {
     const target = t[cat] || 0;
     if (target <= 0) return 'none';
-    const cur = userStats.pairs[cat]?.final || 0;
+    const cur = (userStats.pairs[cat] && userStats.pairs[cat].final) || 0;
     return cur >= target ? 'met' : 'unmet';
   }
   return 'none';
@@ -1686,7 +1686,7 @@ function renderRatioDisplay() {
     }
   }
   for (const key of ['명중','관통','방어','치명저항','회피']) {
-    const cur = userStats.pairs[key]?.final || 0;
+    const cur = (userStats.pairs[key] && userStats.pairs[key].final) || 0;
     const target = t[key] || 0;
     if (target > 0) {
       rows.push(`<div>현재 <b>${key}</b> <span class="${cls(cur, target)}">${cur.toLocaleString()}</span> / 목표 ${target.toLocaleString()}</div>`);

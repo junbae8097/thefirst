@@ -1,0 +1,23 @@
+# Claude Code 작업 디렉토리
+.claude/
+
+# 테스트용 스크린샷
+123123123.jpg
+222222.PNG
+*.jpeg
+*.jpg
+*.png
+!docs/**/*.png
+
+# 구버전 HTML 백업
+우와모험단_더퍼스트*.html
+우와모범단_더퍼스트*.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.vscode/
+.idea/
+*.swp
