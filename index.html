@@ -908,6 +908,51 @@ tr.picked td { color: #ffd700; font-weight: bold; }
   background: rgba(255,255,255,0.02); border-radius: 8px;
   border: 1px dashed rgba(255,255,255,0.1);
 }
+
+.rune-guide-banner {
+  display: flex; align-items: stretch; gap: 8px;
+  padding: 14px 16px; margin-bottom: 14px;
+  background: linear-gradient(90deg, rgba(255,215,0,0.06), rgba(106,127,209,0.06));
+  border: 1px solid rgba(255,215,0,0.18); border-radius: 10px;
+  flex-wrap: wrap;
+}
+.rune-guide-banner .guide-step {
+  flex: 1; min-width: 180px;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px;
+}
+.rune-guide-banner .step-num {
+  flex: 0 0 auto;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #ff6b6b);
+  color: #1a1a2e; font-weight: bold; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.rune-guide-banner .step-text { font-size: 12px; line-height: 1.5; color: #ccc; }
+.rune-guide-banner .step-text b { color: #ffd93d; font-size: 13px; }
+.rune-guide-banner .guide-arrow {
+  display: flex; align-items: center; color: #555;
+  font-size: 18px; padding: 0 4px;
+}
+@media (max-width: 768px) {
+  .rune-guide-banner .guide-arrow { display: none; }
+}
+
+.main-skill-box {
+  margin-top: 10px; padding: 12px 14px;
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 8px;
+}
+.main-skill-box .label-line {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.main-skill-box .label-line .label {
+  font-weight: bold; color: #ffd93d; font-size: 14px;
+}
+.main-skill-box .desc { font-size: 12px; color: #aaa; line-height: 1.5; }
+.main-skill-box label.radio { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -931,7 +976,7 @@ tr.picked td { color: #ffd700; font-weight: bold; }
     <div class="home-subtitle">시뮬레이터 도우미</div>
   </div>
   <div class="home-footer">
-    <span class="home-version">Version 2.5.000006</span>
+    <span class="home-version">Version 2.5.000009</span>
     <span class="home-author">made by 레인테인</span>
   </div>
 </div>
@@ -1122,6 +1167,22 @@ tr.picked td { color: #ffd700; font-weight: bold; }
 
   <div id="rune-dealer-content">
   <div class="rune-section">
+    <div class="rune-guide-banner">
+      <div class="guide-step">
+        <span class="step-num">1</span>
+        <span class="step-text"><b>스킬 입력</b><br>본인 클래스의 기본/코어/전술/궁극 스킬 데이터를 입력합니다.</span>
+      </div>
+      <div class="guide-arrow">→</div>
+      <div class="guide-step">
+        <span class="step-num">2</span>
+        <span class="step-text"><b>메인 딜 스킬 선택</b><br>비중이 가장 큰 주력 스킬(코어 또는 전술)을 선택합니다.</span>
+      </div>
+      <div class="guide-arrow">→</div>
+      <div class="guide-step">
+        <span class="step-num">3</span>
+        <span class="step-text"><b>최적 조합 자동 탐색</b><br>주력 스킬의 DPS를 최대화하는 룬 조합을 자동 추천받습니다.</span>
+      </div>
+    </div>
     <div class="rune-combat-row">
       <label for="rune-combat-time">⏱️ 전투시간</label>
       <input type="number" id="rune-combat-time" min="5" max="600" step="1" value="60">
@@ -1153,15 +1214,21 @@ tr.picked td { color: #ffd700; font-weight: bold; }
           <span style="color:#888;">초</span>
         </label>
       </div>
-      <div class="hint" style="margin-top:8px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-        <b>메인 딜 스킬</b>
-        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
-          <input type="radio" name="rune-main-skill" value="core"> 코어
-        </label>
-        <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
-          <input type="radio" name="rune-main-skill" value="tactical"> 전술
-        </label>
-        <span style="color:#888;">최적 조합 자동 탐색 시 이 스킬의 DPS를 최대화하는 룬 조합을 찾습니다.</span>
+      <div class="main-skill-box">
+        <div class="label-line">
+          <span class="label">⭐ 메인 딜 스킬</span>
+          <label class="radio" style="display:inline-flex; align-items:center; gap:5px;">
+            <input type="radio" name="rune-main-skill" value="core"> 코어
+          </label>
+          <label class="radio" style="display:inline-flex; align-items:center; gap:5px;">
+            <input type="radio" name="rune-main-skill" value="tactical"> 전술
+          </label>
+        </div>
+        <div class="desc">
+          캐릭터 빌드의 <b>주력 딜 스킬</b>(데미지 비중이 가장 큰 것)을 선택하세요.<br>
+          <b>최적 조합 자동 탐색</b>이 이 스킬의 DPS를 최대화하는 룬 조합을 찾아냅니다.
+          룬 효과는 모두 multiplier로 작용하므로 <b>절대 DPS 값과 무관하게 룬 조합 간 상대 비교는 정확</b>합니다.
+        </div>
       </div>
       <div class="hint" style="margin-top:6px; color:#888;">
         <b>기본 피해량</b>: 캐릭터 최종 공격력 베이스. 모든 피해 계산의 기준.<br>
@@ -1179,7 +1246,7 @@ tr.picked td { color: #ffd700; font-weight: bold; }
     <div class="panel-body">
       <div class="hint">
         직접 카드를 클릭해서 코어 1개 + 서포트 4개를 선택하면 그래프가 즉시 갱신됩니다.<br>
-        아래 <b>🚀 최적 조합 자동 탐색</b>을 누르면 입력한 전투시간·스킬 기준으로 최고 평균 DPS 조합을 찾아 자동 선택합니다.
+        아래 <b>🚀 최적 조합 자동 탐색</b>을 누르면 위에서 선택한 <b>메인 딜 스킬(코어/전술)</b>의 DPS를 최대화하는 룬 조합을 38,760개 조합 중 자동으로 찾습니다.
       </div>
 
       <div class="rune-action-bar">
@@ -2683,7 +2750,7 @@ document.querySelectorAll('.role-btn').forEach(btn => {
 });
 
 // 현재 버전 — index.html 상단의 version-info와 일치해야 함
-const APP_VERSION = '2.5.000006';
+const APP_VERSION = '2.5.000009';
 let latestVersion = APP_VERSION;
 
 // URL에 ?v= 파라미터가 있으면 버전 정보로 쓰고 URL은 정리 (히스토리 오염 방지)
@@ -2872,13 +2939,14 @@ function describeRune(r) {
 }
 
 // 스킬 입력 — 4개 카테고리 고정: [0] 기본 / [1] 코어 / [2] 전술 / [3] 궁극
-// 기본값: 아처 (이중사격 / 월인검 댄스 / 충격함정 / 임팩트 헌트)
+// 기본값: 아처 (이중사격 / 월인검 댄스 / 더블호크 / 임팩트 헌트=버프만)
+// 임팩트 헌트는 자체 데미지 없이 공속+트리거 버프만 제공하므로 dmgMult=0
 const SKILL_CATEGORIES = ['기본스킬', '코어스킬', '전술스킬', '궁극스킬'];
 const DEFAULT_SKILLS = [
   { baseCD: 1,     cdr: 0, dmgMult: 1.71, hits: 3,  duration: 0,  isBasic: true },
   { baseCD: 3.01,  cdr: 0, dmgMult: 7.34, hits: 1,  duration: 0 },
-  { baseCD: 9.75,  cdr: 0, dmgMult: 0.91, hits: 8,  duration: 3 },
-  { baseCD: 15.75, cdr: 0, dmgMult: 0.45, hits: 30, duration: 10 },
+  { baseCD: 9.75,  cdr: 0, dmgMult: 1.25, hits: 20, duration: 10 },
+  { baseCD: 15.75, cdr: 0, dmgMult: 0,    hits: 1,  duration: 10 },
 ];
 let runeSkills = clone(DEFAULT_SKILLS);
 try {
@@ -2920,15 +2988,16 @@ try {
 function saveMainSkill() { try { localStorage.setItem('runeMainSkill_v1', runeMainSkill); } catch (e) {} }
 
 // 스킬 사용 시 모션 딜레이 (초). 그 동안 평타 사용 불가 → 평타 데미지에 손실률 적용
-let runeMotionDelay = 0.5;
+// default 1.0 (영상 fitting 결과 게임 내 실제 평타 손실 ~50%와 부합)
+let runeMotionDelay = 1.0;
 try {
-  const saved = localStorage.getItem('runeMotionDelay_v1');
+  const saved = localStorage.getItem('runeMotionDelay_v2');
   if (saved) {
     const v = parseFloat(saved);
     if (Number.isFinite(v) && v >= 0) runeMotionDelay = v;
   }
 } catch (e) {}
-function saveMotionDelay() { try { localStorage.setItem('runeMotionDelay_v1', String(runeMotionDelay)); } catch (e) {} }
+function saveMotionDelay() { try { localStorage.setItem('runeMotionDelay_v2', String(runeMotionDelay)); } catch (e) {} }
 
 // 코어/전술/궁극 스킬 사용으로 인한 평타 손실률 (0~1)
 function basicSkillLossRate(skills, motionDelay) {
