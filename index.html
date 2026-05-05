@@ -4665,23 +4665,26 @@ function getEmblemRawStats(category, name, grade) {
 }
 
 // raw stat → DPS 계산용 final delta {A, C, P, H, D}
-// 사용자의 현재 보너스를 적용해서 final stat 변화 계산
+// 게임 공식: final = base × (bonusPct/100), 입력값 138.8% → ×1.388 (총 배율)
+// 정확 공식: new_final = (base + Δraw) × ((bonus + Δbonus)/100)
+// — base × Δb/100 + Δraw × bonus/100 만 더하면 cross term Δraw × Δb/100 누락됨
 function rawToFinalDelta(raw, bonuses) {
-  const factor = (b) => 1 + (b || 0) / 100;
-  // 현재 보너스
-  const fA = factor(bonuses.bA), fC = factor(bonuses.bC),
-        fP = factor(bonuses.bP), fH = factor(bonuses.bH);
-  // 1) raw stat 추가 → final += raw × factor
-  let dA = raw.A_raw * fA;
-  let dC = raw.C_raw * fC;
-  let dP = raw.P_raw * fP;
-  let dH = raw.H_raw * fH;
-  // 2) 보너스 추가 → final += base × Δb/100, base = current_final / factor
-  if (raw.bA) dA += (bonuses.A_cur || 0) / fA * raw.bA / 100;
-  if (raw.bC) dC += (bonuses.C_cur || 0) / fC * raw.bC / 100;
-  if (raw.bP) dP += (bonuses.P_cur || 0) / fP * raw.bP / 100;
-  if (raw.bH) dH += (bonuses.H_cur || 0) / fH * raw.bH / 100;
-  return { A: dA, C: dC, P: dP, H: dH, D: raw.D || 0 };
+  const factor = (b) => (b || 0) / 100;
+  const apply = (curFinal, curBonus, dRaw, dBonus) => {
+    const f = factor(curBonus);
+    if (f <= 0) return (dRaw || 0); // safeguard
+    const base = curFinal / f;
+    const newBase = base + (dRaw || 0);
+    const newFinal = newBase * factor(curBonus + (dBonus || 0));
+    return newFinal - curFinal;
+  };
+  return {
+    A: apply(bonuses.A_cur || 0, bonuses.bA, raw.A_raw, raw.bA),
+    C: apply(bonuses.C_cur || 0, bonuses.bC, raw.C_raw, raw.bC),
+    P: apply(bonuses.P_cur || 0, bonuses.bP, raw.P_raw, raw.bP),
+    H: apply(bonuses.H_cur || 0, bonuses.bH, raw.H_raw, raw.bH),
+    D: raw.D || 0,
+  };
 }
 
 // 짧은 표기용
@@ -4820,8 +4823,8 @@ function getCurrentBonuses() {
   };
 }
 
-function getEmblemDelta() {
-  // 모든 swap 슬롯의 raw delta 합산 → final delta
+function getEmblemRawDelta() {
+  // 모든 swap 슬롯의 raw delta 합산
   const totalRaw = { A_raw:0, C_raw:0, P_raw:0, H_raw:0, bA:0, bC:0, bP:0, bH:0, D:0 };
   for (const cat of ['기교','지혜','활력']) {
     if (!EMBLEM_SWAPS[cat]) continue;
@@ -4833,7 +4836,7 @@ function getEmblemDelta() {
       for (const k of Object.keys(totalRaw)) totalRaw[k] += (newRaw[k]||0) - (oldRaw[k]||0);
     });
   }
-  return rawToFinalDelta(totalRaw, getCurrentBonuses());
+  return totalRaw;
 }
 
 function hasAnySwap() {
@@ -4856,22 +4859,22 @@ function toPredict(stats, m) {
   return Math.pow(A, m.beta) * Pterm * Hterm * (1 + D/100) * (1 + m.k * p);
 }
 
-function getStatDelta() {
+function getSliderRawDelta() {
+  // 슬라이더 입력 → raw 단위로 환산 (dps-dA 는 final 단위라 raw 로 변환)
   const get = id => parseFloat((document.getElementById(id)||{}).value || 0) || 0;
-  // 기본 stat (final 단위) + 보너스 변경 (%pt → final delta로 환산)
   const bonuses = getCurrentBonuses();
-  const factor = (b) => 1 + (b || 0) / 100;
-  const dbA = get('dps-dbA'), dbC = get('dps-dbC'), dbP = get('dps-dbP'), dbH = get('dps-dbH');
-  // base × Δb/100
-  const fromBA = (bonuses.A_cur || 0) / factor(bonuses.bA) * dbA / 100;
-  const fromBC = (bonuses.C_cur || 0) / factor(bonuses.bC) * dbC / 100;
-  const fromBP = (bonuses.P_cur || 0) / factor(bonuses.bP) * dbP / 100;
-  const fromBH = (bonuses.H_cur || 0) / factor(bonuses.bH) * dbH / 100;
+  const factor = (b) => (b || 0) / 100;
+  const toRaw = (sliderFinal, bonus) => {
+    const f = factor(bonus);
+    return f > 0 ? sliderFinal / f : sliderFinal;
+  };
   return {
-    A: get('dps-dA') + fromBA,
-    C: get('dps-dC') + fromBC,
-    P: get('dps-dP') + fromBP,
-    H: get('dps-dH') + fromBH,
+    A_raw: toRaw(get('dps-dA'), bonuses.bA),
+    C_raw: toRaw(get('dps-dC'), bonuses.bC),
+    P_raw: toRaw(get('dps-dP'), bonuses.bP),
+    H_raw: toRaw(get('dps-dH'), bonuses.bH),
+    bA: get('dps-dbA'), bC: get('dps-dbC'),
+    bP: get('dps-dbP'), bH: get('dps-dbH'),
     D: get('dps-dD'),
   };
 }
@@ -4910,12 +4913,19 @@ function updateDpsView() {
   // === 현재 빌드 + 예측 결과 ===
   const cur = getCurrentStats();
   const oldP = cur.A + cur.P > 0 ? cur.C / (cur.A + cur.P) : 0;
-  const statD = getStatDelta();
-  const embD = getEmblemDelta();
-  const delta = {
-    A: statD.A + embD.A, C: statD.C + embD.C, P: statD.P + embD.P,
-    H: statD.H + embD.H, D: statD.D + embD.D,
+  // 슬라이더 + 엠블럼 swap raw delta 합산 후 한 번에 final delta 변환 (cross term 보존)
+  const sliderRaw = getSliderRawDelta();
+  const embRaw = getEmblemRawDelta();
+  const totalRaw = {
+    A_raw: sliderRaw.A_raw + embRaw.A_raw,
+    C_raw: sliderRaw.C_raw + embRaw.C_raw,
+    P_raw: sliderRaw.P_raw + embRaw.P_raw,
+    H_raw: sliderRaw.H_raw + embRaw.H_raw,
+    bA: sliderRaw.bA + embRaw.bA, bC: sliderRaw.bC + embRaw.bC,
+    bP: sliderRaw.bP + embRaw.bP, bH: sliderRaw.bH + embRaw.bH,
+    D: sliderRaw.D + embRaw.D,
   };
+  const delta = rawToFinalDelta(totalRaw, getCurrentBonuses());
 
   // 현재 빌드 카드
   const curEl = document.getElementById('dps-current');
